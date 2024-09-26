@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operación y Mantenimiento</title>
+
+    <!-- Incluyendo los estilos de Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- #### CSS del minimapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-minimap@3.6.1/dist/Control.MiniMap.min.css" />
+    <!-- #### Estilos para el plugin de escala -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <!-- #### Estilos específicos del plugin de posición del ratón -->
+    <link rel="stylesheet" href="./css/L.Control.MousePosition.css">
+
+
+    <!-- Incluyendo los scripts de Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- #### Script del minimapa -->
+    <script src="https://unpkg.com/leaflet-minimap@3.6.1/dist/Control.MiniMap.min.js"></script>
+
+    <!-- #### Script para el plugin de posición del ratón -->
+    <script src="./js/L.Control.MousePosition.js"></script>
+
+    <style>
+        /* Tamaño del body */
+        
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        /* El mapa en todo el espacio disponible */
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        /* Modificando la clase .leaflet-tooltip para cambiar el tamaño y estilo de las etiquetas */
+        
+        .leaflet-tooltip {
+            font-size: 9px;
+            font-weight: bold;
+            color: black;
+            background-color: white;
+            border: 1px solid black;
+            padding: 3px;
+            border-radius: 5px;
+        }
+        /* Botón de descarga */
+        
+        .download-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Div contenedor del mapa -->
+    <div id="map"></div>
+
+    <!-- Botón de descarga -->
+    <a href="./data/Cuencas_TDPS.gpkg" download="Cuencas_TDPS.gpkg">
+        <button class="download-btn">Descargar Archivo</button>
+    </a>
+
+    <script>
+        // Inicializa el mapa centrado Lagunillas
+        var map = L.map('map').setView([-15.733820, -70.727931], 13);
+
+        // Añade una capa base de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Definir el estilo para las geometrías
+        function estilo(feature) {
+            return {
+                color: 'blue',
+                weight: 2,
+                opacity: 0.5,
+                fillColor: 'blue',
+                fillOpacity: 0.1
+            };
+        }
+
+        // Función para agregar etiquetas a cada geometría
+        function onEachFeature(feature, layer) {
+            if (feature.properties && feature.properties.cuenca) {
+                layer.bindTooltip(feature.properties.cuenca, {
+                    permanent: true,
+                    direction: "center"
+                });
+            }
+        }
+
+        // Carga del archivo GeoJSON con estilo y etiquetas
+        fetch('./data/Cuencas_TDPS.geojson')
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                var geojsonLayer = L.geoJSON(data, {
+                    style: estilo, // Aplicar el estilo definido
+                    onEachFeature: onEachFeature // Aplicar etiquetas
+                }).addTo(map);
+                map.fitBounds(geojsonLayer.getBounds()); // Ajustar el mapa para que el polígono quede visible
+            })
+            .catch(function(error) {
+                console.error('Error al cargar el GeoJSON:', error);
+            });
+
+
+        // Capa base para el minimapa
+        var miniMapLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        // Crear el minimapa
+        var miniMap = new L.Control.MiniMap(miniMapLayer, {
+            toggleDisplay: true,
+            minimized: false,
+            position: 'bottomright'
+        }).addTo(map);
+
+        //visualización de coordenadas del mouse
+        L.control.mousePosition({
+            position: 'bottomleft',
+        }).addTo(map);
+
+        //barra de escala
+        L.control.scale({
+            position: 'bottomleft',
+            metric: true,
+        }).addTo(map);
+    </script>
+
+</body>
+
+</html>
